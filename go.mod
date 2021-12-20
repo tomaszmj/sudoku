@@ -1,3 +1,3 @@
-module github.com/tomaszmj/packets
+module github.com/tomaszmj/sudoku
 
 go 1.17
