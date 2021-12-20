@@ -21,6 +21,9 @@ func New(subgridWidth, subgridHeight int) (*Board, error) {
 	if subgridWidth < 1 || subgridHeight < 1 {
 		return nil, fmt.Errorf("invalid grid size, subgrid sizes must be at least 1, got %d, %d", subgridWidth, subgridHeight)
 	}
+	if subgridWidth > MaxSize || subgridHeight > MaxSize {
+		return nil, fmt.Errorf("invalid grid size, subgrid sizes can be max %d, got %d, %d", MaxSize, subgridWidth, subgridHeight)
+	}
 	gridSize := subgridHeight * subgridWidth
 	if gridSize > MaxSize {
 		return nil, fmt.Errorf("grid size (%d) > max available grid size (%d)", gridSize, MaxSize)
@@ -50,16 +53,11 @@ func (b *Board) String() string {
 	var s strings.Builder
 	digitLen := len(fmt.Sprint(b.gridSize))
 	charsPerSubgridX := b.subgridWidth + 1 + b.subgridWidth*digitLen
+	s.Grow((b.gridSize + b.subgridsCountY + 1) * (charsPerSubgridX*b.subgridsCountX + b.subgridsCountX + 2))
 	dataIndex := 0
 	for y := 0; y < b.gridSize; y++ {
 		if y%b.subgridHeight == 0 {
-			for subgrid := 0; subgrid < b.subgridsCountX; subgrid++ {
-				s.WriteString("+")
-				for i := 0; i < charsPerSubgridX; i++ {
-					s.WriteString("-")
-				}
-			}
-			s.WriteString("+\n")
+			b.writeBoardHeaderLine(charsPerSubgridX, &s)
 		}
 		for x := 0; x < b.gridSize; x++ {
 			if x%b.subgridWidth == 0 {
@@ -70,6 +68,11 @@ func (b *Board) String() string {
 		}
 		s.WriteString("|\n")
 	}
+	b.writeBoardHeaderLine(charsPerSubgridX, &s)
+	return s.String()
+}
+
+func (b *Board) writeBoardHeaderLine(charsPerSubgridX int, s *strings.Builder) {
 	for subgrid := 0; subgrid < b.subgridsCountX; subgrid++ {
 		s.WriteString("+")
 		for i := 0; i < charsPerSubgridX; i++ {
@@ -77,5 +80,4 @@ func (b *Board) String() string {
 		}
 	}
 	s.WriteString("+\n")
-	return s.String()
 }
