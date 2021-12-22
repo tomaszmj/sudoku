@@ -132,6 +132,23 @@ func NewFromSerializedFormat(reader io.Reader) (*Board, error) {
 	return board, nil
 }
 
+func (b *Board) Copy() *Board {
+	dataCopy := make([]uint16, len(b.data))
+	copy(dataCopy, b.data)
+	return &Board{
+		data:           dataCopy,
+		subgridWidth:   b.subgridWidth,
+		subgridHeight:  b.subgridHeight,
+		gridSize:       b.gridSize,
+		subgridsCountX: b.subgridsCountX,
+		subgridsCountY: b.subgridsCountY,
+	}
+}
+
+func (b *Board) Size() int {
+	return b.gridSize
+}
+
 func (b *Board) Get(x, y int) uint16 {
 	offset := y*b.gridSize + x
 	return b.data[offset]
@@ -157,12 +174,15 @@ func (b *Board) ForEachInColumn(x int, operation func(x, y int)) {
 	}
 }
 
-func (b *Board) ForEach(operation func(x, y int)) {
+func (b *Board) ForEachUntilError(operation func(x, y int) error) error {
 	for x := 0; x < b.gridSize; x++ {
 		for y := 0; y < b.gridSize; y++ {
-			operation(x, y)
+			if err := operation(x, y); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func (b *Board) ForEachInSubgrid(x, y int, operation func(x, y int)) {
