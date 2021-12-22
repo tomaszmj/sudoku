@@ -60,7 +60,7 @@ func New(subgridWidth, subgridHeight int) (*Board, error) {
 	}, nil
 }
 
-var filterLineRegex = regexp.MustCompile(`\d+`)
+var findNumbersRegex = regexp.MustCompile(`\d+`)
 
 // NewFromSerializedFormat creates board from serialized format. It accepts
 // data format produced by Serialize, i.e. the first line is
@@ -86,7 +86,7 @@ func NewFromSerializedFormat(reader io.Reader) (*Board, error) {
 	if !scanner.Scan() {
 		return nil, fmt.Errorf("error - no data")
 	}
-	firstLineNumbers := filterLineRegex.FindAll(scanner.Bytes(), 2)
+	firstLineNumbers := findNumbersRegex.FindAll(scanner.Bytes(), 2)
 	if len(firstLineNumbers) != 2 {
 		return nil, fmt.Errorf("error parsing - expected 2 numbers, line: %s", scanner.Text())
 	}
@@ -104,7 +104,7 @@ func NewFromSerializedFormat(reader io.Reader) (*Board, error) {
 	}
 	y := 0
 	for scanner.Scan() {
-		numbers := filterLineRegex.FindAll(scanner.Bytes(), board.gridSize)
+		numbers := findNumbersRegex.FindAll(scanner.Bytes(), board.gridSize)
 		if len(numbers) == 0 {
 			continue
 		}
