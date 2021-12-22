@@ -17,6 +17,22 @@ type Board struct {
 	subgridsCountY int
 }
 
+// New creates board with given SUBGRID width and height.
+// The board is always square and number of rows / columns
+// must be the same as number of fields in a subgrid, so
+// total board size is not provided as an argument -
+// it must be always subgridWidth*subgridHeight.
+// For example, with subgrid 3x2 the board will be 6x6:
+// +-------+-------+
+// | 0 0 0 | 0 0 0 |
+// | 0 0 0 | 0 0 0 |
+// +-------+-------+
+// | 0 0 0 | 0 0 0 |
+// | 0 0 0 | 0 0 0 |
+// +-------+-------+
+// | 0 0 0 | 0 0 0 |
+// | 0 0 0 | 0 0 0 |
+// +-------+-------+
 func New(subgridWidth, subgridHeight int) (*Board, error) {
 	if subgridWidth < 1 || subgridHeight < 1 {
 		return nil, fmt.Errorf("invalid grid size, subgrid sizes must be at least 1, got %d, %d", subgridWidth, subgridHeight)
@@ -40,6 +56,7 @@ func New(subgridWidth, subgridHeight int) (*Board, error) {
 	}, nil
 }
 
+// FillExampleData is a temporary function to test how board with non-zero digits is printed
 func (b *Board) FillExampleData() {
 	lastIndex := b.gridSize*b.gridSize - 1
 	for i := 0; i < b.gridSize; i++ {
@@ -49,6 +66,17 @@ func (b *Board) FillExampleData() {
 	}
 }
 
+// String writes board in "ASCII art", for example:
+// +-------+-------+
+// | 1 2 3 | 4 5 6 |
+// | 0 0 0 | 0 0 0 |
+// +-------+-------+
+// | 0 0 0 | 0 0 0 |
+// | 0 0 0 | 0 0 0 |
+// +-------+-------+
+// | 0 0 0 | 0 0 0 |
+// | 6 5 4 | 3 2 1 |
+// +-------+-------+
 func (b *Board) String() string {
 	var s strings.Builder
 	digitLen := len(fmt.Sprint(b.gridSize))
