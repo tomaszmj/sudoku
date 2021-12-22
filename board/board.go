@@ -86,7 +86,7 @@ func NewFromSerializedFormat(reader io.Reader) (*Board, error) {
 	if !scanner.Scan() {
 		return nil, fmt.Errorf("error - no data")
 	}
-	firstLineNumbers := findNumbersRegex.FindAll(scanner.Bytes(), 2)
+	firstLineNumbers := findNumbersRegex.FindAll(scanner.Bytes(), 3) // 3 instead of 2 to find if there are too many numbers
 	if len(firstLineNumbers) != 2 {
 		return nil, fmt.Errorf("error parsing - expected 2 numbers, line: %s", scanner.Text())
 	}
@@ -102,9 +102,10 @@ func NewFromSerializedFormat(reader io.Reader) (*Board, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating board: %w", err)
 	}
-	y := 0
+	y, lineNumber := 0, 1 // y is number of saved rows in the board, lineNumber is number of lines read (only for error reporting)
 	for scanner.Scan() {
-		numbers := findNumbersRegex.FindAll(scanner.Bytes(), board.gridSize)
+		lineNumber++
+		numbers := findNumbersRegex.FindAll(scanner.Bytes(), board.gridSize+1) // +1 to find if there are too many numbers
 		if len(numbers) == 0 {
 			continue
 		}
@@ -112,15 +113,15 @@ func NewFromSerializedFormat(reader io.Reader) (*Board, error) {
 			return nil, fmt.Errorf("too many board lines, expected %d", board.gridSize)
 		}
 		if len(numbers) != board.gridSize {
-			return nil, fmt.Errorf("expected %d numbers, got %d in line %s", board.gridSize, len(numbers), scanner.Text())
+			return nil, fmt.Errorf("expected %d numbers, got %d in line %d: %s", board.gridSize, len(numbers), lineNumber, scanner.Text())
 		}
 		for x, numberBytes := range numbers {
 			number, err := strconv.Atoi(string(numberBytes))
 			if err != nil {
-				return nil, fmt.Errorf("error parsing number %w in line: %s", err, scanner.Text())
+				return nil, fmt.Errorf("error parsing number %w in line %d: %s", err, lineNumber, scanner.Text())
 			}
 			if number < 0 || number > board.gridSize {
-				return nil, fmt.Errorf("inalid number %d in line: %s", number, scanner.Text())
+				return nil, fmt.Errorf("inalid number %d in line %d: %s", number, lineNumber, scanner.Text())
 			}
 			board.Set(x, y, uint16(number))
 		}

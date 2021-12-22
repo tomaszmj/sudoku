@@ -63,7 +63,7 @@ func TestBoardForEachInSubgrid(t *testing.T) {
 	assert.Equal(t, board3x2partiallyFilled, board.String())
 }
 
-func TestBoardSerialization(t *testing.T) {
+func TestBoardNewFromSerializedFormat(t *testing.T) {
 	t.Run("board can be recreated from string", func(t *testing.T) {
 		board1, err := board.New(3, 2)
 		require.NoError(t, err)
@@ -76,36 +76,40 @@ func TestBoardSerialization(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, board1, board2)
 	})
-	t.Run("smallest possible board in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("smallest possible board", func(t *testing.T) {
 		board1, err := board.NewFromSerializedFormat(strings.NewReader("1 1\n1"))
 		require.NoError(t, err)
 		assert.Equal(t, uint16(1), board1.Get(0, 0))
 	})
-	t.Run("invalid first line format in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("invalid first line format", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("1 \n"))
 		assert.Error(t, err)
 	})
-	t.Run("invalid board data format in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("invalid board data format", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("2 2\n0\n"))
 		assert.Error(t, err)
 	})
-	t.Run("too many rows in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("too many rows", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("2 1\n0 0\n0 0\n0 0\n"))
 		assert.Error(t, err)
 	})
-	t.Run("too little rows in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("too little rows", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("2 1\n0 0\n"))
 		assert.Error(t, err)
 	})
-	t.Run("number parsing error in NewFromSerializedFormat despite matching regex", func(t *testing.T) {
+	t.Run("too long row", func(t *testing.T) {
+		_, err := board.NewFromSerializedFormat(strings.NewReader("1 1\n0 0 0"))
+		assert.Error(t, err)
+	})
+	t.Run("number parsing error despite matching regex", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("1 1\n99999999999999999999999999999999"))
 		assert.Error(t, err)
 	})
-	t.Run("invalid number (greater than board size) in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("invalid number (greater than board size)", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("1 1\n2"))
 		assert.Error(t, err)
 	})
-	t.Run("invalid board size in NewFromSerializedFormat", func(t *testing.T) {
+	t.Run("invalid board size", func(t *testing.T) {
 		_, err := board.NewFromSerializedFormat(strings.NewReader("1000000 1000000\n"))
 		assert.Error(t, err)
 	})

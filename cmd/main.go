@@ -22,7 +22,7 @@ func main() {
 		fmt.Printf("error closing file: %s\n", err2)
 	}
 	if err != nil {
-		fmt.Printf("error creating board from file %s: %s", os.Args[1], err)
+		fmt.Printf("error creating board from file %s: %s\n", os.Args[1], err)
 		return
 	}
 	board1.Serialize(os.Stdout)
