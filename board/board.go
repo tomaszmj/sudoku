@@ -163,6 +163,23 @@ func (b *Board) Set(x, y int, value uint16) {
 	b.data[offset] = value
 }
 
+func (b *Board) Equal(b2 *Board) bool {
+	if b.subgridWidth != b2.subgridWidth ||
+		b.subgridHeight != b2.subgridHeight ||
+		b.gridSize != b2.gridSize ||
+		b.subgridsCountX != b2.subgridsCountX ||
+		b.subgridsCountY != b2.subgridsCountY ||
+		len(b.data) != len(b2.data) {
+		return false
+	}
+	for i := range b.data {
+		if b.data[i] != b2.data[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func (b *Board) ForEachInRow(y int, operation func(x, y int)) {
 	for x := 0; x < b.gridSize; x++ {
 		operation(x, y)

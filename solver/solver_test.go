@@ -29,6 +29,14 @@ var (
 +-----+-----+
 `)
 
+	boardWithManySoltions = mustCreateBoard(`2 1
++-----+
+| 0 0 |
++-----+
+| 0 0 |
++-----+
+`)
+
 	solvedBoard = mustCreateBoard(`2 2
 +-----+-----+
 | 2 4 | 1 3 |
@@ -69,6 +77,17 @@ func genericTestSolver(t *testing.T, solver solver.Solver) {
 		require.NotNil(t, solution)
 		assert.Equal(t, solvedBoard.String(), solution.String())
 		require.Nil(t, solver.NextSolution())
+	})
+
+	t.Run("puzzle with many solutions", func(t *testing.T) {
+		solver.Reset(boardWithManySoltions)
+		i := 0
+		solution := solver.NextSolution()
+		for solution != nil {
+			i++
+			solution = solver.NextSolution()
+		}
+		assert.Greater(t, i, 1)
 	})
 }
 
