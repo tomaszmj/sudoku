@@ -41,7 +41,7 @@ func (b *bruteforce) Reset(board *board.Board) {
 // backtracking: for each field that was initially empty
 // it tries to fill ANY number and recursively calls itself
 // until all number are filled (without any initial validation!).
-// When all numbers are filled, it checks "BoardValid" and
+// When all numbers are filled, it checks "boardIsValid" and
 // if given solution has not been returned before.
 // If solution is new, it is saved in b.solutions and returned.
 // Otherwise, nil is returned.
@@ -60,7 +60,7 @@ func (b *bruteforce) NextSolution() *board.Board {
 		}
 	}
 	// break recursion and validate board state if all fieldsToFill are already set
-	if BoardValid(b.board) {
+	if b.boardIsValid() {
 		if b.recordSolution() {
 			return b.solutions[len(b.solutions)-1]
 		}
@@ -84,19 +84,19 @@ func (b *bruteforce) recordSolution() bool {
 	return true
 }
 
-func BoardValid(b *board.Board) bool {
-	err := b.ForEachUntilError(func(x, y int) error {
-		number := b.Get(x, y)
+func (b *bruteforce) boardIsValid() bool {
+	err := b.board.ForEachUntilError(func(x, y int) error {
+		number := b.board.Get(x, y)
 		if number == 0 {
 			return fmt.Errorf("unfilled number")
 		}
 
 		rowValid := true
-		b.ForEachInRow(y, func(x2, y2 int) {
+		b.board.ForEachInRow(y, func(x2, y2 int) {
 			if x2 == x && y2 == y {
 				return
 			}
-			if b.Get(x2, y2) == number {
+			if b.board.Get(x2, y2) == number {
 				rowValid = false
 			}
 		})
@@ -105,11 +105,11 @@ func BoardValid(b *board.Board) bool {
 		}
 
 		columnValid := true
-		b.ForEachInColumn(x, func(x2, y2 int) {
+		b.board.ForEachInColumn(x, func(x2, y2 int) {
 			if x2 == x && y2 == y {
 				return
 			}
-			if b.Get(x2, y2) == number {
+			if b.board.Get(x2, y2) == number {
 				columnValid = false
 			}
 		})
@@ -118,11 +118,11 @@ func BoardValid(b *board.Board) bool {
 		}
 
 		subgridValid := true
-		b.ForEachInSubgrid(x, y, func(x2, y2 int) {
+		b.board.ForEachInSubgrid(x, y, func(x2, y2 int) {
 			if x2 == x && y2 == y {
 				return
 			}
-			if b.Get(x2, y2) == number {
+			if b.board.Get(x2, y2) == number {
 				subgridValid = false
 			}
 		})

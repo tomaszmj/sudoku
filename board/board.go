@@ -146,6 +146,8 @@ func (b *Board) Copy() *Board {
 	}
 }
 
+// Size returns total width/height of the board.
+// For example, for standard 9x9 sudoku with 3x3 subgrids, this will return 9.
 func (b *Board) Size() int {
 	return b.gridSize
 }

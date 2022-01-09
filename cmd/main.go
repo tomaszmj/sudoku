@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/tomaszmj/sudoku/board"
+	"github.com/tomaszmj/sudoku/solver"
 )
 
 func main() {
@@ -26,4 +27,7 @@ func main() {
 		return
 	}
 	board1.Serialize(os.Stdout)
+
+	solver.TestHeap()
+	fmt.Println("")
 }
