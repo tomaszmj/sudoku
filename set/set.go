@@ -1,6 +1,9 @@
 package set
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Set is holds some integers, from 1 to provided maxNumber.
 // We could just use map[int]bool, but this implementation provides much better performance
@@ -57,6 +60,12 @@ func (s *Set) Len() int {
 	return s.count
 }
 
+// MaxNumber returns maximum number that can be stored in the set.
+// Set can store integers from 1 to MaxNumber. Calling Get / Set / Remove with other value may cause panic.
+func (s *Set) MaxNumber() int {
+	return len(s.slice)
+}
+
 // Clear removes all elements from set (underlying storage remains allocated).
 func (s *Set) Clear() {
 	for i := range s.slice {
@@ -71,28 +80,85 @@ func (s *Set) RawData() []uint8 {
 	return s.slice
 }
 
-func (s *Set) Union(s1 *Set) *Set {
-	if len(s.slice) != len(s1.slice) {
-		panic(fmt.Sprintf("Sets cannot be unioned to different maxNumber: %d vs %d", len(s.slice), len(s1.slice)))
-	}
-	newSet := New(len(s.slice))
-	for i := range s.slice {
-		if s.slice[i] != 0 || s1.slice[i] != 0 {
-			newSet.Add(i + 1)
+// Complement returns set that contains all valid values (integers 1..maxNumber) that are NOT in the set.
+func (s *Set) Complement() *Set {
+	maxNumber := s.MaxNumber()
+	result := New(maxNumber)
+	for n := 1; n <= maxNumber; n++ {
+		if !s.Get(n) {
+			result.Add(n)
 		}
 	}
-	return newSet
+	return result
 }
 
-func (s *Set) Intersection(s1 *Set) *Set {
-	if len(s.slice) != len(s1.slice) {
-		panic(fmt.Sprintf("Sets cannot be intersectioned to different maxNumber: %d vs %d", len(s.slice), len(s1.slice)))
+func (s *Set) Copy() *Set {
+	newSlice := make([]uint8, len(s.slice))
+	copy(newSlice, s.slice)
+	return &Set{
+		slice: newSlice,
+		count: s.Len(),
 	}
-	newSet := New(len(s.slice))
-	for i := range s.slice {
-		if s.slice[i] != 0 && s1.slice[i] != 0 {
-			newSet.Add(i + 1)
+}
+
+// String returns human-readable representation of Set. It should be used only for tests / debugging.
+func (s *Set) String() string {
+	var b strings.Builder
+	b.WriteString("{")
+	for n := 1; n <= s.MaxNumber(); n++ {
+		if s.Get(n) {
+			b.WriteString(fmt.Sprintf("%d,", n))
 		}
 	}
-	return newSet
+	b.WriteString("}")
+	return b.String()
+}
+
+func Intersection(sets ...*Set) *Set {
+	if len(sets) == 0 {
+		return nil
+	}
+	maxNumber := sets[0].MaxNumber()
+	for _, s := range sets {
+		if s.MaxNumber() != maxNumber {
+			panic(fmt.Sprintf("set Intersection failed - incompatible maxNumber %d, %d", maxNumber, s.MaxNumber()))
+		}
+	}
+	result := New(maxNumber)
+	for n := 1; n <= maxNumber; n++ {
+		ok := true
+		for _, set := range sets {
+			ok = ok && set.Get(n)
+			if !ok {
+				break
+			}
+		}
+		if ok {
+			result.Add(n)
+		}
+	}
+	return result
+}
+
+func Union(sets ...*Set) *Set {
+	if len(sets) == 0 {
+		return nil
+	}
+	maxNumber := sets[0].MaxNumber()
+	for _, s := range sets {
+		if s.MaxNumber() != maxNumber {
+			panic(fmt.Sprintf("set Intersection failed - incompatible maxNumber %d, %d", maxNumber, s.MaxNumber()))
+		}
+	}
+	result := New(maxNumber)
+	for n := 1; n <= maxNumber; n++ {
+		ok := false
+		for _, set := range sets {
+			ok = ok || set.Get(n)
+		}
+		if ok {
+			result.Add(n)
+		}
+	}
+	return result
 }

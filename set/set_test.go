@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSet(t *testing.T) {
+func TestSetAddGetRemove(t *testing.T) {
 	s := set.New(4)
 	assert.Equal(t, 0, s.Len()) // set is created empty
 
@@ -35,6 +35,15 @@ func TestSet(t *testing.T) {
 	assert.Equal(t, 1, s.Len())
 }
 
+func TestSetCopy(t *testing.T) {
+	s1 := set.New(2)
+	s1.Add(1)
+	s2 := s1.Copy()
+	s1.Add(2)
+	assert.True(t, s2.Get(1))
+	assert.False(t, s2.Get(2))
+}
+
 func TestSetUnion(t *testing.T) {
 	s1 := set.New(4)
 	s1.Add(1)
@@ -42,7 +51,7 @@ func TestSetUnion(t *testing.T) {
 	s2 := set.New(4)
 	s2.Add(1)
 	s2.Add(2)
-	s := s1.Union(s2)
+	s := set.Union(s1, s2)
 	assert.True(t, s.Get(1))
 	assert.True(t, s.Get(2))
 	assert.False(t, s.Get(3))
@@ -56,11 +65,20 @@ func TestSetIntersection(t *testing.T) {
 	s2 := set.New(4)
 	s2.Add(1)
 	s2.Add(2)
-	s := s1.Intersection(s2)
+	s := set.Intersection(s1, s2)
 	assert.True(t, s.Get(1))
 	assert.False(t, s.Get(2))
 	assert.False(t, s.Get(3))
 	assert.False(t, s.Get(4))
+}
+
+func TestSetComplement(t *testing.T) {
+	s1 := set.New(3)
+	s1.Add(2)
+	s := s1.Complement()
+	assert.True(t, s.Get(1))
+	assert.False(t, s.Get(2))
+	assert.True(t, s.Get(3))
 }
 
 func BenchmarkSet(b *testing.B) {
