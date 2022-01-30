@@ -26,8 +26,13 @@ func main() {
 		fmt.Printf("error creating board from file %s: %s\n", os.Args[1], err)
 		return
 	}
-	board1.Serialize(os.Stdout)
-
-	solver.TestHeap()
-	fmt.Println("")
+	fmt.Printf("input:\n%s\n", board1)
+	solver := solver.NewSmartBarcktrack()
+	solver.Reset(board1)
+	solution := solver.NextSolution()
+	if solution == nil {
+		fmt.Println("no solution")
+	} else {
+		fmt.Printf("solution:\n%s\n", solution)
+	}
 }

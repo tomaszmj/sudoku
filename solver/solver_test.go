@@ -95,3 +95,12 @@ func TestBrutefoce(t *testing.T) {
 	solver := solver.NewBruteforce()
 	genericTestSolver(t, solver)
 }
+
+
+func TestSmartBacktrack(t *testing.T) {
+	solver := solver.NewSmartBarcktrack()
+	// TODO for now this fails for "puzzle_with_many_solutions" and
+	// normal solution is also hacked (it would not work for more complex
+	// puzzles with backtracking needed)
+	genericTestSolver(t, solver)
+}

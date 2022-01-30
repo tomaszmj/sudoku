@@ -74,10 +74,21 @@ func (s *Set) Clear() {
 	s.count = 0
 }
 
-// RawData is provided as convenience if iterating for each set element is needed.
-// Returned slice should be used read-only.
-func (s *Set) RawData() []uint8 {
-	return s.slice
+// ForEach executes given operation for each set element until
+// it is called for all elements or until operation returns true.
+// It returns last number for which operation was performed,
+// or 0 if set is empty.
+func (s *Set) ForEach(operation func(n int) bool) int {
+	lastN := 0
+	for n := 1; n <= s.MaxNumber(); n++ {
+		if s.Get(n) {
+			lastN = n
+			if end := operation(n); end {
+				return n
+			}
+		}
+	}
+	return lastN
 }
 
 // Complement returns set that contains all valid values (integers 1..maxNumber) that are NOT in the set.
@@ -105,11 +116,10 @@ func (s *Set) Copy() *Set {
 func (s *Set) String() string {
 	var b strings.Builder
 	b.WriteString("{")
-	for n := 1; n <= s.MaxNumber(); n++ {
-		if s.Get(n) {
-			b.WriteString(fmt.Sprintf("%d,", n))
-		}
-	}
+	s.ForEach(func(n int) bool {
+		b.WriteString(fmt.Sprintf("%d,", n))
+		return false
+	})
 	b.WriteString("}")
 	return b.String()
 }

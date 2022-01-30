@@ -63,6 +63,13 @@ func TestBoardForEachInSubgrid(t *testing.T) {
 	assert.Equal(t, board3x2partiallyFilled, board.String())
 }
 
+func TestBoardHaveCommonSubgrid(t *testing.T) {
+	board, err := board.New(3, 3)
+	require.NoError(t, err)
+	assert.True(t, board.HaveCommonSubgrid(0, 1, 2, 2))
+	assert.False(t, board.HaveCommonSubgrid(0, 0, 3, 0))
+}
+
 func TestBoardNewFromSerializedFormat(t *testing.T) {
 	t.Run("board can be recreated from string", func(t *testing.T) {
 		board1, err := board.New(3, 2)

@@ -215,6 +215,14 @@ func (b *Board) ForEachInSubgrid(x, y int, operation func(x, y int)) {
 	}
 }
 
+func (b *Board) HaveCommonSubgrid(x1, y1, x2, y2 int) bool {
+	gridBeginX1 := x1 - x1%b.subgridWidth
+	gridBeginY1 := y1 - y1%b.subgridHeight
+	gridBeginX2 := x2 - x2%b.subgridWidth
+	gridBeginY2 := y2 - y2%b.subgridHeight
+	return gridBeginX1 == gridBeginX2 && gridBeginY1 == gridBeginY2
+}
+
 func (b *Board) Serialize(writer io.Writer) error {
 	if _, err := io.WriteString(writer, fmt.Sprintf("%d %d\n", b.subgridWidth, b.subgridHeight)); err != nil {
 		return err
