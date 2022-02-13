@@ -24,7 +24,7 @@ type smartBacktrack struct {
 	// with no solution if choice stack is empty. To enable that,
 	// we have to somehow distinguish starting point (no field selected yet)
 	// and end of all choices (all possible ways of filling sudoku exhausted).
-	choiceStack []fieldToFill
+	choiceStack fieldsToFillStack
 }
 
 func NewSmartBarcktrack() Solver {
@@ -33,6 +33,7 @@ func NewSmartBarcktrack() Solver {
 
 func (s *smartBacktrack) Reset(board *board.Board) {
 	s.solvable = true
+	s.choiceStack = fieldsToFillStack{}
 	s.board = board.Copy()
 	fieldsToFill := make([]fieldToFill, 0)
 	board.ForEachUntilError(func(x, y int) error {
@@ -59,59 +60,52 @@ func (s *smartBacktrack) NextSolution() *board.Board {
 	for len(s.currentFieldsToFill) > 0 {
 		f := heap.Pop(&s.currentFieldsToFill).(fieldToFill)
 		if f.possibleValues.Len() == 0 {
-			return nil
+			if s.backtrack() {
+				continue
+			} else {
+				return nil
+			}
 		}
-		if f.possibleValues.Len() == 1 {
-			n := f.possibleValues.ForEach(func(n int) bool {
-				return true
-			})
-			s.setNumber(f.x, f.y, uint16(n))
-		} else {
-			fmt.Printf("got %d choices for (%d, %d) - "+
-				"backtracking not implemented yet :(\n", f.possibleValues.Len(), f.x, f.y)
-			return nil
-		}
-		//TODO proper backtracking
-		//var solution *board.Board
-		//n := f.possibleValues.ForEach(func(n int) bool {
-		//	s.setNumber(f.x, f.y, uint16(n))
-		//	ns := s.NextSolution() // recursive call
-		//	if ns != nil { // ok - return from recursive call
-		//		solution = ns
-		//		return true
-		//	}
-		//	// else - backtrack - revert selecting number for given field
-		//	s.resetNumber(f.x, f.y)
-		//	return false
-		//})
-		//if solution != nil {
-		//	return solution // ok - solution found
-		//}
-		//// else - backtrack - revert selecting field
-		//heap.Push(&s.currentFieldsToFill, f)
+		n := f.possibleValues.ForEach(func(n int) bool {
+			return true
+		})
+		f.possibleValues.Remove(n)
+		s.choiceStack.Push(f)
+		s.setNumber(f.x, f.y, uint16(n))
 	}
 	s.solvable = false // ensure solution is returned only once
 	return s.board.Copy()
 }
 
+func (s *smartBacktrack) backtrack() bool {
+	for !s.choiceStack.IsEmpty() {
+		f := s.choiceStack.Pop()
+		s.resetNumber(f.x, f.y)
+		if f.possibleValues.Len() > 0 {
+			n := f.possibleValues.ForEach(func(n int) bool {
+				return true
+			})
+			f.possibleValues.Remove(n)
+			s.choiceStack.Push(f)
+			s.setNumber(f.x, f.y, uint16(n))
+		}
+	}
+	return false
+}
+
 func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 	s.board.Set(x, y, n)
-	toRemove := -1
 	sortNeeded := false
-	for i, f := range s.currentFieldsToFill {
-		// if given field is still in currentFieldsToFill list - mark to be removed
+	for _, f := range s.currentFieldsToFill {
 		if f.x == x && f.y == y {
-			toRemove = i
-			continue
+			// this check will be removed, for now just a temporary brutal panic for tests
+			panic("assertion failed - setNumber while number is still in currentFieldsToFill")
 		}
 		// if field is in the same row / column / subgrid as changed field,
 		// if set of possibleVelues must be updated
 		if f.x == x || f.y == y || s.board.HaveCommonSubgrid(x, y, f.x, f.y) {
 			sortNeeded = sortNeeded || f.possibleValues.Remove(int(n))
 		}
-	}
-	if toRemove >= 0 {
-		heap.Remove(&s.currentFieldsToFill, toRemove)
 	}
 	// TODO we can use heap.Fix only for changed fields if each field "knows" its queue index
 	// (but it is just an optimization that can be done later if needed)

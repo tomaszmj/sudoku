@@ -17,6 +17,26 @@ func (f fieldToFill) String() string {
 	return fmt.Sprintf("(%d, %d) %s", f.x, f.y, f.possibleValues.String())
 }
 
+type fieldsToFillStack []fieldToFill
+
+func (s *fieldsToFillStack) Push(f fieldToFill) {
+	*s = append(*s, f)
+}
+
+func (s *fieldsToFillStack) Pop() fieldToFill {
+	f := (*s)[len(*s)-1]
+	*s = (*s)[:len(*s)-1]
+	return f
+}
+
+func (s fieldsToFillStack) Peek() fieldToFill {
+	return s[len(s)-1]
+}
+
+func (s fieldsToFillStack) IsEmpty() bool {
+	return len(s) == 0
+}
+
 type fieldsToFillHeap []fieldToFill
 
 func (h fieldsToFillHeap) Len() int {
