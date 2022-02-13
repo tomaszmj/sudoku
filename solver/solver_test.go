@@ -96,7 +96,6 @@ func TestBrutefoce(t *testing.T) {
 	genericTestSolver(t, solver)
 }
 
-
 func TestSmartBacktrack(t *testing.T) {
 	solver := solver.NewSmartBarcktrack()
 	// TODO for now this fails for "puzzle_with_many_solutions" and

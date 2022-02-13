@@ -11,8 +11,20 @@ import (
 type smartBacktrack struct {
 	board                *board.Board
 	originalFieldsToFill []fieldToFill
-	currentFieldsToFill fieldsToFillHeap
-	solvable bool
+	currentFieldsToFill  fieldsToFillHeap
+	solvable             bool
+	// TODO recursion-less, stack-based backtracking.
+	// Let's say we take from currentFieldsToFill
+	// field (1,1) with possible numbers {1,2}.
+	// We put 1 on board and push remaining options to the stack, i.e. (1,1) {2}.
+	// If there are no options left, we still push field to the stack to be able
+	// to trace back our choices. For example if the next field to fill
+	// was (2,3) with {3}, then we put (2,3) {} to the stack.
+	// NextSolution ends with success if currentFieldsToFill if empty,
+	// with no solution if choice stack is empty. To enable that,
+	// we have to somehow distinguish starting point (no field selected yet)
+	// and end of all choices (all possible ways of filling sudoku exhausted).
+	choiceStack []fieldToFill
 }
 
 func NewSmartBarcktrack() Solver {
@@ -55,7 +67,7 @@ func (s *smartBacktrack) NextSolution() *board.Board {
 			})
 			s.setNumber(f.x, f.y, uint16(n))
 		} else {
-			fmt.Printf("got %d choices for (%d, %d) - " +
+			fmt.Printf("got %d choices for (%d, %d) - "+
 				"backtracking not implemented yet :(\n", f.possibleValues.Len(), f.x, f.y)
 			return nil
 		}
@@ -81,7 +93,6 @@ func (s *smartBacktrack) NextSolution() *board.Board {
 	s.solvable = false // ensure solution is returned only once
 	return s.board.Copy()
 }
-
 
 func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 	s.board.Set(x, y, n)
@@ -114,10 +125,12 @@ func (s *smartBacktrack) resetNumber(x, y int) {
 	s.board.Set(x, y, 0)
 	possibleNumbers, _ := s.findPossibleNumbers(x, y)
 	sortNeeded := false
-	for _, f := range s.currentFieldsToFill {
+	for i, f := range s.currentFieldsToFill {
 		if f.x == x || f.y == y || s.board.HaveCommonSubgrid(x, y, f.x, f.y) {
-			f.possibleValues.Add(int(n))
-			sortNeeded = true
+			if s.fieldCanHaveNumber(f.x, f.y, n) {
+				s.currentFieldsToFill[i].possibleValues.Add(int(n))
+				sortNeeded = true
+			}
 		}
 	}
 	newField := fieldToFill{
@@ -165,4 +178,30 @@ func (s *smartBacktrack) findPossibleNumbers(x, y int) (*set.Set, error) {
 	}
 	allForbiddenNumbers := set.Union(row, col, subgrid)
 	return allForbiddenNumbers.Complement(), nil
+}
+
+func (s *smartBacktrack) fieldCanHaveNumber(x, y int, n uint16) bool {
+	ok := true
+	s.board.ForEachInRow(y, func(x, y int) {
+		if s.board.Get(x, y) == n {
+			ok = false
+		}
+	})
+	if !ok {
+		return false
+	}
+	s.board.ForEachInColumn(x, func(x, y int) {
+		if s.board.Get(x, y) == n {
+			ok = false
+		}
+	})
+	if !ok {
+		return false
+	}
+	s.board.ForEachInSubgrid(x, y, func(x, y int) {
+		if s.board.Get(x, y) == n {
+			ok = false
+		}
+	})
+	return ok
 }

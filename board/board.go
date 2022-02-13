@@ -195,8 +195,8 @@ func (b *Board) ForEachInColumn(x int, operation func(x, y int)) {
 }
 
 func (b *Board) ForEachUntilError(operation func(x, y int) error) error {
-	for x := 0; x < b.gridSize; x++ {
-		for y := 0; y < b.gridSize; y++ {
+	for y := 0; y < b.gridSize; y++ {
+		for x := 0; x < b.gridSize; x++ {
 			if err := operation(x, y); err != nil {
 				return err
 			}
