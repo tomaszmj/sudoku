@@ -87,7 +87,7 @@ func genericTestSolver(t *testing.T, solver solver.Solver) {
 			i++
 			solution = solver.NextSolution()
 		}
-		assert.Greater(t, i, 1)
+		assert.Equal(t, 2, i)
 	})
 }
 

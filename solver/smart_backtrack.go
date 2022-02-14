@@ -9,11 +9,9 @@ import (
 )
 
 type smartBacktrack struct {
-	board                *board.Board
-	originalFieldsToFill []fieldToFill
-	currentFieldsToFill  fieldsToFillHeap
-	solvable             bool
-	// TODO recursion-less, stack-based backtracking.
+	board               *board.Board
+	currentFieldsToFill fieldsToFillHeap
+	solvable            bool
 	// Let's say we take from currentFieldsToFill
 	// field (1,1) with possible numbers {1,2}.
 	// We put 1 on board and push remaining options to the stack, i.e. (1,1) {2}.
@@ -21,10 +19,9 @@ type smartBacktrack struct {
 	// to trace back our choices. For example if the next field to fill
 	// was (2,3) with {3}, then we put (2,3) {} to the stack.
 	// NextSolution ends with success if currentFieldsToFill if empty,
-	// with no solution if choice stack is empty. To enable that,
-	// we have to somehow distinguish starting point (no field selected yet)
-	// and end of all choices (all possible ways of filling sudoku exhausted).
-	choiceStack fieldsToFillStack
+	// with no solution if choice stack is empty.
+	choiceStack  fieldChoicesLeftStack
+	chosenFields []fieldCoordinates
 }
 
 func NewSmartBarcktrack() Solver {
@@ -33,7 +30,7 @@ func NewSmartBarcktrack() Solver {
 
 func (s *smartBacktrack) Reset(board *board.Board) {
 	s.solvable = true
-	s.choiceStack = fieldsToFillStack{}
+	s.choiceStack = fieldChoicesLeftStack{}
 	s.board = board.Copy()
 	fieldsToFill := make([]fieldToFill, 0)
 	board.ForEachUntilError(func(x, y int) error {
@@ -46,7 +43,6 @@ func (s *smartBacktrack) Reset(board *board.Board) {
 		}
 		return nil
 	})
-	s.originalFieldsToFill = fieldsToFill
 	currentFieldsToFill := make([]fieldToFill, len(fieldsToFill))
 	copy(currentFieldsToFill, fieldsToFill)
 	s.currentFieldsToFill = fieldsToFillHeap(currentFieldsToFill)
@@ -63,38 +59,45 @@ func (s *smartBacktrack) NextSolution() *board.Board {
 			if s.backtrack() {
 				continue
 			} else {
+				s.solvable = false
 				return nil
 			}
 		}
-		n := f.possibleValues.ForEach(func(n int) bool {
-			return true
+		f.possibleValues.ForEach(func(n int) bool {
+			s.choiceStack.Push(fieldChoiceLeft{f.x, f.y, uint16(n)})
+			return false
 		})
-		f.possibleValues.Remove(n)
-		s.choiceStack.Push(f)
-		s.setNumber(f.x, f.y, uint16(n))
+		choice := s.choiceStack.Pop()
+		s.setNumber(choice.x, choice.y, uint16(choice.n))
 	}
-	s.solvable = false // ensure solution is returned only once
-	return s.board.Copy()
+	solution := s.board.Copy()
+	if !s.backtrack() {
+		s.solvable = false // there will be no more solutions
+	}
+	return solution
 }
 
 func (s *smartBacktrack) backtrack() bool {
-	for !s.choiceStack.IsEmpty() {
-		f := s.choiceStack.Pop()
-		s.resetNumber(f.x, f.y)
-		if f.possibleValues.Len() > 0 {
-			n := f.possibleValues.ForEach(func(n int) bool {
-				return true
-			})
-			f.possibleValues.Remove(n)
-			s.choiceStack.Push(f)
-			s.setNumber(f.x, f.y, uint16(n))
-		}
+	if s.choiceStack.IsEmpty() {
+		return false
 	}
-	return false
+	restoredChoice := s.choiceStack.Pop()
+	for i := len(s.chosenFields) - 1; i >= 0; i-- {
+		f := s.chosenFields[i]
+		if f.x == restoredChoice.x && f.y == restoredChoice.y {
+			s.resetNumber(f.x, f.y, true) //TODO remove hack
+			s.chosenFields = s.chosenFields[:i]
+			s.setNumber(f.x, f.y, restoredChoice.n)
+			return true
+		}
+		s.resetNumber(f.x, f.y, false)
+	}
+	panic("assertion failed in backtrack - restoredChoice coordinates were not in chosenFields")
 }
 
 func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 	s.board.Set(x, y, n)
+	s.chosenFields = append(s.chosenFields, fieldCoordinates{x, y})
 	sortNeeded := false
 	for _, f := range s.currentFieldsToFill {
 		if f.x == x && f.y == y {
@@ -102,7 +105,7 @@ func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 			panic("assertion failed - setNumber while number is still in currentFieldsToFill")
 		}
 		// if field is in the same row / column / subgrid as changed field,
-		// if set of possibleVelues must be updated
+		// set of possibleVelues must be updated
 		if f.x == x || f.y == y || s.board.HaveCommonSubgrid(x, y, f.x, f.y) {
 			sortNeeded = sortNeeded || f.possibleValues.Remove(int(n))
 		}
@@ -114,12 +117,15 @@ func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 	}
 }
 
-func (s *smartBacktrack) resetNumber(x, y int) {
+func (s *smartBacktrack) resetNumber(x, y int, hack bool) {
 	n := s.board.Get(x, y)
 	s.board.Set(x, y, 0)
-	possibleNumbers, _ := s.findPossibleNumbers(x, y)
 	sortNeeded := false
 	for i, f := range s.currentFieldsToFill {
+		if f.x == x && f.y == y {
+			// this check will be removed, for now just a temporary brutal panic for tests
+			panic("assertion failed - resetNumber while number is still in currentFieldsToFill")
+		}
 		if f.x == x || f.y == y || s.board.HaveCommonSubgrid(x, y, f.x, f.y) {
 			if s.fieldCanHaveNumber(f.x, f.y, n) {
 				s.currentFieldsToFill[i].possibleValues.Add(int(n))
@@ -127,16 +133,27 @@ func (s *smartBacktrack) resetNumber(x, y int) {
 			}
 		}
 	}
-	newField := fieldToFill{
-		x:              x,
-		y:              y,
-		possibleValues: possibleNumbers,
-	}
 	if sortNeeded {
-		s.currentFieldsToFill.Push(newField)
+		if !hack {
+			possibleNumbers, _ := s.findPossibleNumbers(x, y)
+			newField := fieldToFill{
+				x:              x,
+				y:              y,
+				possibleValues: possibleNumbers,
+			}
+			s.currentFieldsToFill.Push(newField)
+		}
 		heap.Init(&s.currentFieldsToFill)
 	} else {
-		heap.Push(&s.currentFieldsToFill, newField)
+		if !hack {
+			possibleNumbers, _ := s.findPossibleNumbers(x, y)
+			newField := fieldToFill{
+				x:              x,
+				y:              y,
+				possibleValues: possibleNumbers,
+			}
+			heap.Push(&s.currentFieldsToFill, newField)
+		}
 	}
 }
 

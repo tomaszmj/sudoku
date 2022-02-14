@@ -6,6 +6,15 @@ import (
 	"github.com/tomaszmj/sudoku/set"
 )
 
+type fieldCoordinates struct {
+	x, y int
+}
+
+type fieldChoiceLeft struct {
+	x, y int
+	n    uint16
+}
+
 // fieldToFill is a helper data structure used by solver to determine what fields should be filled in
 type fieldToFill struct {
 	x, y           int
@@ -17,23 +26,23 @@ func (f fieldToFill) String() string {
 	return fmt.Sprintf("(%d, %d) %s", f.x, f.y, f.possibleValues.String())
 }
 
-type fieldsToFillStack []fieldToFill
+type fieldChoicesLeftStack []fieldChoiceLeft
 
-func (s *fieldsToFillStack) Push(f fieldToFill) {
+func (s *fieldChoicesLeftStack) Push(f fieldChoiceLeft) {
 	*s = append(*s, f)
 }
 
-func (s *fieldsToFillStack) Pop() fieldToFill {
+func (s *fieldChoicesLeftStack) Pop() fieldChoiceLeft {
 	f := (*s)[len(*s)-1]
 	*s = (*s)[:len(*s)-1]
 	return f
 }
 
-func (s fieldsToFillStack) Peek() fieldToFill {
+func (s fieldChoicesLeftStack) Peek() fieldChoiceLeft {
 	return s[len(s)-1]
 }
 
-func (s fieldsToFillStack) IsEmpty() bool {
+func (s fieldChoicesLeftStack) IsEmpty() bool {
 	return len(s) == 0
 }
 
