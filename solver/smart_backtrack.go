@@ -52,8 +52,8 @@ func (s *smartBacktrack) NextSolution() *board.Board {
 		r := recover()
 		if r != nil {
 			fmt.Printf("panic encountered: %v\nboard:\n%s\n", r, s.board.String())
+			s.solvable = false
 		}
-		s.solvable = false
 	}()
 	if !s.solvable {
 		return nil
@@ -96,7 +96,8 @@ func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 	s.board.Set(x, y, n)
 	s.choicesMade = append(s.choicesMade, fieldChoice{x, y, n})
 	sortNeeded := false
-	for _, f := range s.fieldsToFill {
+	for i := range s.fieldsToFill {
+		f := &s.fieldsToFill[i]
 		if f.x == x && f.y == y {
 			// this check will be removed, for now just a temporary brutal panic for tests
 			panic("assertion failed - setNumber while number is still in fieldsToFill")
@@ -104,7 +105,8 @@ func (s *smartBacktrack) setNumber(x, y int, n uint16) {
 		// if field is in the same row / column / subgrid as changed field,
 		// set of possibleVelues must be updated
 		if f.x == x || f.y == y || s.board.HaveCommonSubgrid(x, y, f.x, f.y) {
-			sortNeeded = sortNeeded || f.possibleValues.Remove(int(n))
+			removed := f.possibleValues.Remove(int(n))
+			sortNeeded = sortNeeded || removed
 		}
 	}
 	// TODO we can use heap.Fix only for changed fields if each field "knows" its queue index
@@ -155,7 +157,8 @@ func (s *smartBacktrack) backtrack() bool {
 // It recreates fieldsToFill heap after choices from revertedChoices list
 // have been removed from the board.
 func (s *smartBacktrack) restoreFieldsToFill(revertedChoices []fieldChoice) {
-	for i, f := range s.fieldsToFill {
+	for i := range s.fieldsToFill {
+		f := &s.fieldsToFill[i]
 		possibleValues, err := s.findPossibleNumbers(f.x, f.y)
 		if err != nil {
 			panic(fmt.Sprintf("restoreFieldsToFill assertion failed: %s", err))

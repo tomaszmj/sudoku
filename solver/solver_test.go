@@ -56,6 +56,39 @@ var (
 | 1 3 | 4 2 |
 +-----+-----+
 `)
+
+	// difficultBoard - taken from https://sandiway.arizona.edu/sudoku/examples.html
+	difficultBoard = mustCreateBoard(`3 3
++-------+-------+-------+
+| 0 0 0 | 6 0 0 | 4 0 0 |
+| 7 0 0 | 0 0 3 | 6 0 0 |
+| 0 0 0 | 0 9 1 | 0 8 0 |
++-------+-------+-------+
+| 0 0 0 | 0 0 0 | 0 0 0 |
+| 0 5 0 | 1 8 0 | 0 0 3 |
+| 0 0 0 | 3 0 6 | 0 4 5 |
++-------+-------+-------+
+| 0 4 0 | 2 0 0 | 0 6 0 |
+| 9 0 3 | 0 0 0 | 0 0 0 |
+| 0 2 0 | 0 0 0 | 1 0 0 |
++-------+-------+-------+
+`)
+
+	difficultBoardSolution = mustCreateBoard(`3 3
++-------+-------+-------+
+| 5 8 1 | 6 7 2 | 4 3 9 |
+| 7 9 2 | 8 4 3 | 6 5 1 |
+| 3 6 4 | 5 9 1 | 7 8 2 |
++-------+-------+-------+
+| 4 3 8 | 9 5 7 | 2 1 6 |
+| 2 5 6 | 1 8 4 | 9 7 3 |
+| 1 7 9 | 3 2 6 | 8 4 5 |
++-------+-------+-------+
+| 8 4 5 | 2 1 9 | 3 6 7 |
+| 9 1 3 | 7 6 8 | 5 2 4 |
+| 6 2 7 | 4 3 5 | 1 9 8 |
++-------+-------+-------+
+`)
 )
 
 func genericTestSolver(t *testing.T, solver solver.Solver) {
@@ -102,4 +135,13 @@ func TestSmartBacktrack(t *testing.T) {
 	// normal solution is also hacked (it would not work for more complex
 	// puzzles with backtracking needed)
 	genericTestSolver(t, solver)
+
+	// this is not tested for Bruteforce because of computational complexity
+	t.Run("difficult puzzle with 1 solution", func(t *testing.T) {
+		solver.Reset(difficultBoard)
+		solution := solver.NextSolution()
+		require.NotNil(t, solution)
+		assert.Equal(t, difficultBoardSolution.String(), solution.String())
+		require.Nil(t, solver.NextSolution())
+	})
 }
