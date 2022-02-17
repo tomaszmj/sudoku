@@ -205,29 +205,3 @@ func (s *smartBacktrack) findPossibleNumbers(x, y int) (*set.Set, error) {
 	allForbiddenNumbers := set.Union(row, col, subgrid)
 	return allForbiddenNumbers.Complement(), nil
 }
-
-func (s *smartBacktrack) fieldCanHaveNumber(x, y int, n uint16) bool {
-	ok := true
-	s.board.ForEachInRow(y, func(x, y int) {
-		if s.board.Get(x, y) == n {
-			ok = false
-		}
-	})
-	if !ok {
-		return false
-	}
-	s.board.ForEachInColumn(x, func(x, y int) {
-		if s.board.Get(x, y) == n {
-			ok = false
-		}
-	})
-	if !ok {
-		return false
-	}
-	s.board.ForEachInSubgrid(x, y, func(x, y int) {
-		if s.board.Get(x, y) == n {
-			ok = false
-		}
-	})
-	return ok
-}
