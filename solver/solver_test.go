@@ -145,3 +145,99 @@ func TestSmartBacktrack(t *testing.T) {
 		require.Nil(t, solver.NextSolution())
 	})
 }
+
+func BenchmarkSmartBacktrack(b *testing.B) {
+	solver := solver.NewSmartBarcktrack()
+
+	board6x6 := mustCreateBoard(`3 2
++-------+-------+
+| 0 5 6 | 3 2 0 |
+| 3 0 0 | 6 4 5 |
++-------+-------+
+| 6 1 5 | 0 0 4 |
+| 2 0 3 | 0 0 6 |
++-------+-------+
+| 1 0 0 | 4 0 0 |
+| 0 0 4 | 0 6 0 |
++-------+-------+`)
+
+	board9x9Easy := mustCreateBoard(`3 3
++-------+-------+-------+
+| 0 0 0 | 2 6 0 | 7 0 1 |
+| 6 8 0 | 0 7 0 | 0 9 0 |
+| 1 9 0 | 0 0 4 | 5 0 0 |
++-------+-------+-------+
+| 8 2 0 | 1 0 0 | 0 4 0 |
+| 0 0 4 | 6 0 2 | 9 0 0 |
+| 0 5 0 | 0 0 3 | 0 2 8 |
++-------+-------+-------+
+| 0 0 9 | 3 0 0 | 0 7 4 |
+| 0 4 0 | 0 5 0 | 0 3 6 |
+| 7 0 3 | 0 1 8 | 0 0 0 |
++-------+-------+-------+`)
+
+	board9x9Difficult := mustCreateBoard(`3 3
++-------+-------+-------+
+| 0 2 0 | 0 0 0 | 0 0 0 |
+| 0 0 0 | 6 0 0 | 0 0 3 |
+| 0 7 4 | 0 8 0 | 0 0 0 |
++-------+-------+-------+
+| 0 0 0 | 0 0 3 | 0 0 2 |
+| 0 8 0 | 0 4 0 | 0 1 0 |
+| 6 0 0 | 5 0 0 | 0 0 0 |
++-------+-------+-------+
+| 0 0 0 | 0 1 0 | 7 8 0 |
+| 5 0 0 | 0 0 9 | 0 0 0 |
+| 0 0 0 | 0 0 0 | 0 4 0 |
++-------+-------+-------+`)
+
+	board12x12 := mustCreateBoard(`3 4
++----------+----------+----------+----------+
+|  0  7  0 | 10  0  0 |  9  0 11 | 12  5  0 |
+|  0  0  0 | 11  2  0 |  0  0  0 |  0  4  0 |
+|  6  0  0 |  0  4  0 | 10  1  2 |  0  0  9 |
+|  5  0  0 |  0  6  0 |  8  0  0 |  1  0  0 |
++----------+----------+----------+----------+
+| 11  0  4 |  0  0  9 |  0  0  0 |  3  8  0 |
+|  0  1  3 |  6  0  0 |  5  0  0 |  0  0  0 |
+|  0  0  0 |  0  0  0 |  0  0  0 |  0  0  0 |
+|  7  9  5 |  0  0 11 |  3  0 12 |  2  0  0 |
++----------+----------+----------+----------+
+| 12  4  0 |  3  0  0 |  7  0  0 |  0  0  0 |
+|  0  0  0 |  0  0  0 |  0  0  0 |  0  0  2 |
+|  0  8  0 |  0  0 10 |  0  5  4 |  0  7  0 |
+|  0  0  0 |  5  0  0 |  0 10  0 |  4  0  6 |
++----------+----------+----------+----------+`)
+
+	b.Run("6x6", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			solver.Reset(board6x6)
+			require.NotNil(b, solver.NextSolution())
+			require.Nil(b, solver.NextSolution())
+		}
+	})
+
+	b.Run("9x9 easy", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			solver.Reset(board9x9Easy)
+			require.NotNil(b, solver.NextSolution())
+			require.Nil(b, solver.NextSolution())
+		}
+	})
+
+	b.Run("9x9 difficult", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			solver.Reset(board9x9Difficult)
+			require.NotNil(b, solver.NextSolution())
+			require.Nil(b, solver.NextSolution())
+		}
+	})
+
+	b.Run("12x12", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			solver.Reset(board12x12)
+			require.NotNil(b, solver.NextSolution())
+			require.Nil(b, solver.NextSolution())
+		}
+	})
+}
