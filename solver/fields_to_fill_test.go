@@ -8,23 +8,6 @@ import (
 	"github.com/tomaszmj/sudoku/set"
 )
 
-func TestStack(t *testing.T) {
-	f1 := fieldChoiceLeft{x: 1, y: 1, n: 1}
-	f2 := fieldChoiceLeft{x: 1, y: 2, n: 2}
-	s := &fieldChoicesLeftStack{}
-	assert.True(t, s.IsEmpty())
-	s.Push(f1)
-	assert.False(t, s.IsEmpty())
-	s.Push(f2)
-	assert.Equal(t, f2, s.Peek())
-	assert.Equal(t, f2, s.Pop())
-	assert.Equal(t, f1, s.Pop())
-	assert.True(t, s.IsEmpty())
-	assert.Panics(t, func() {
-		s.Pop()
-	})
-}
-
 func TestHeap(t *testing.T) {
 	possibleValues1 := set.New(4)
 	possibleValues1.Add(3)

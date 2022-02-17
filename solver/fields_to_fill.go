@@ -6,11 +6,7 @@ import (
 	"github.com/tomaszmj/sudoku/set"
 )
 
-type fieldCoordinates struct {
-	x, y int
-}
-
-type fieldChoiceLeft struct {
+type fieldChoice struct {
 	x, y int
 	n    uint16
 }
@@ -24,26 +20,6 @@ type fieldToFill struct {
 // String is used only for test
 func (f fieldToFill) String() string {
 	return fmt.Sprintf("(%d, %d) %s", f.x, f.y, f.possibleValues.String())
-}
-
-type fieldChoicesLeftStack []fieldChoiceLeft
-
-func (s *fieldChoicesLeftStack) Push(f fieldChoiceLeft) {
-	*s = append(*s, f)
-}
-
-func (s *fieldChoicesLeftStack) Pop() fieldChoiceLeft {
-	f := (*s)[len(*s)-1]
-	*s = (*s)[:len(*s)-1]
-	return f
-}
-
-func (s fieldChoicesLeftStack) Peek() fieldChoiceLeft {
-	return s[len(s)-1]
-}
-
-func (s fieldChoicesLeftStack) IsEmpty() bool {
-	return len(s) == 0
 }
 
 type fieldsToFillHeap []fieldToFill
