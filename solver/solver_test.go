@@ -21,6 +21,11 @@ func genericTestSolver(t *testing.T, solver solver.Solver) {
 		require.Nil(t, solver.NextSolution())
 	})
 
+	t.Run("invalid puzzle", func(t *testing.T) {
+		solver.Reset(invalidBoard)
+		require.Nil(t, solver.NextSolution())
+	})
+
 	t.Run("solve puzzle", func(t *testing.T) {
 		solver.Reset(boardToSolve)
 		solution := solver.NextSolution()

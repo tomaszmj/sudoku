@@ -173,35 +173,11 @@ func (s *smartBacktrack) restoreFieldsToFill(revertedChoices []fieldChoice) {
 }
 
 func (s *smartBacktrack) findPossibleNumbers(x, y int) (*set.Set, error) {
-	size := s.board.Size()
-	row := set.New(size)
-	col := set.New(size)
-	subgrid := set.New(size)
-	var err error
-	s.board.ForEachInRow(y, func(x, y int) {
+	allForbiddenNumbers := set.New(s.board.Size())
+	s.board.ForEachNeighbour(x, y, func(x, y int) {
 		if n := s.board.Get(x, y); n != 0 {
-			if !row.Add(int(n)) {
-				err = fmt.Errorf("number %d is repeated in row %d", n, y)
-			}
+			allForbiddenNumbers.Add(int(n))
 		}
 	})
-	s.board.ForEachInColumn(x, func(x, y int) {
-		if n := s.board.Get(x, y); n != 0 {
-			if !col.Add(int(n)) {
-				err = fmt.Errorf("number %d is repeated in column %d", n, x)
-			}
-		}
-	})
-	s.board.ForEachInSubgrid(x, y, func(x, y int) {
-		if n := s.board.Get(x, y); n != 0 {
-			if !subgrid.Add(int(n)) {
-				err = fmt.Errorf("number %d is repeated in subgrid for field (%d, %d)", n, x, y)
-			}
-		}
-	})
-	if err != nil {
-		return set.New(size), err
-	}
-	allForbiddenNumbers := set.Union(row, col, subgrid)
 	return allForbiddenNumbers.Complement(), nil
 }

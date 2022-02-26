@@ -55,6 +55,18 @@ var (
 +-----+-----+
 `)
 
+	// this board is invalid, i.e. it has multiple 1 in one segment, but if
+	// looking only at missing fields (0), SmartBacktrack would report some solution
+	invalidBoard = mustCreateBoard(`2 2
++-----+-----+
+| 0 0 | 0 3 |
+| 0 1 | 0 4 |
++-----+-----+
+| 4 2 | 3 1 |
+| 1 3 | 4 1 |
++-----+-----+
+`)
+
 	// difficultBoard - taken from https://sandiway.arizona.edu/sudoku/examples.html
 	difficultBoard = mustCreateBoard(`3 3
 +-------+-------+-------+
