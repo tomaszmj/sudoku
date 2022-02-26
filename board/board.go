@@ -215,6 +215,40 @@ func (b *Board) ForEachInSubgrid(x, y int, operation func(x, y int)) {
 	}
 }
 
+func (b *Board) ForEachNeighbour(x0, y0 int, operation func(x, y int)) {
+	gridBeginX := x0 - x0%b.subgridWidth
+	gridBeginY := y0 - y0%b.subgridHeight
+	gridEndX := gridBeginX + b.subgridWidth
+	gridEndY := gridBeginY + b.subgridHeight
+	// vertical line above subgrid
+	for y := 0; y < gridBeginY; y++ {
+		operation(x0, y)
+	}
+	// subgrid above point
+	for y := gridBeginY; y < y0; y++ {
+		for x := gridBeginX; x < gridEndX; x++ {
+			operation(x, y)
+		}
+	}
+	// point's row, including subgrid, excluding point itself
+	for x := 0; x < x0; x++ {
+		operation(x, y0)
+	}
+	for x := x0 + 1; x < b.gridSize; x++ {
+		operation(x, y0)
+	}
+	// subgrid below point
+	for y := y0 + 1; y < gridEndY; y++ {
+		for x := gridBeginX; x < gridEndX; x++ {
+			operation(x, y)
+		}
+	}
+	// vertical line below subgrid
+	for y := gridEndY; y < b.gridSize; y++ {
+		operation(x0, y)
+	}
+}
+
 func (b *Board) HaveCommonSubgrid(x1, y1, x2, y2 int) bool {
 	gridBeginX1 := x1 - x1%b.subgridWidth
 	gridBeginX2 := x2 - x2%b.subgridWidth

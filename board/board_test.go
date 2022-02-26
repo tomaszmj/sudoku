@@ -63,6 +63,19 @@ func TestBoardForEachInSubgrid(t *testing.T) {
 	assert.Equal(t, board3x2partiallyFilled, board.String())
 }
 
+func TestBoardForEachNeighbour(t *testing.T) {
+	board, err := board.New(3, 2)
+	require.NoError(t, err)
+	board.ForEachNeighbour(2, 3, func(x, y int) {
+		if board.Get(x, y) == 0 {
+			board.Set(x, y, 1)
+		} else {
+			board.Set(x, y, 2) // should not happen
+		}
+	})
+	assert.Equal(t, board3x2NeigbourFilled, board.String())
+}
+
 func TestBoardHaveCommonSubgrid(t *testing.T) {
 	board, err := board.New(3, 3)
 	require.NoError(t, err)
@@ -154,5 +167,17 @@ const board3x2partiallyFilled = `+-------+-------+
 +-------+-------+
 | 0 0 0 | 0 0 0 |
 | 0 0 0 | 0 0 0 |
++-------+-------+
+`
+
+const board3x2NeigbourFilled = `+-------+-------+
+| 0 0 1 | 0 0 0 |
+| 0 0 1 | 0 0 0 |
++-------+-------+
+| 1 1 1 | 0 0 0 |
+| 1 1 0 | 1 1 1 |
++-------+-------+
+| 0 0 1 | 0 0 0 |
+| 0 0 1 | 0 0 0 |
 +-------+-------+
 `
