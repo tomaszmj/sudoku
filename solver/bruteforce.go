@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tomaszmj/sudoku/board"
+	"github.com/tomaszmj/sudoku/set"
 )
 
 type bruteforce struct {
@@ -26,11 +27,10 @@ func NewBruteforce() Solver {
 
 func (b *bruteforce) Reset(board *board.Board) {
 	fieldsToFill := make(map[field]struct{})
-	board.ForEachUntilError(func(x, y int) error {
-		if board.Get(x, y) == 0 {
+	board.ForEach(func(x, y int, n uint16) {
+		if n == 0 {
 			fieldsToFill[field{x, y}] = struct{}{}
 		}
-		return nil
 	})
 	b.board = board.Copy()
 	b.solutions = nil
@@ -41,7 +41,7 @@ func (b *bruteforce) Reset(board *board.Board) {
 // backtracking: for each field that was initially empty
 // it tries to fill ANY number and recursively calls itself
 // until all number are filled (without any initial validation!).
-// When all numbers are filled, it checks "boardIsValid" and
+// When all numbers are filled, it validates board and
 // if given solution has not been returned before.
 // If solution is new, it is saved in b.solutions and returned.
 // Otherwise, nil is returned.
@@ -85,52 +85,16 @@ func (b *bruteforce) recordSolution() bool {
 }
 
 func (b *bruteforce) boardIsValid() bool {
-	err := b.board.ForEachUntilError(func(x, y int) error {
-		number := b.board.Get(x, y)
-		if number == 0 {
-			return fmt.Errorf("unfilled number")
+	numbersFound := set.New(b.board.Size())
+	validateFunc := func(x, y int, n uint16) error {
+		if n == 0 {
+			return fmt.Errorf("field %d, %d is empty", x, y)
 		}
-
-		rowValid := true
-		b.board.ForEachInRow(y, func(x2, y2 int) {
-			if x2 == x && y2 == y {
-				return
-			}
-			if b.board.Get(x2, y2) == number {
-				rowValid = false
-			}
-		})
-		if !rowValid {
-			return fmt.Errorf("row invalid")
+		if !numbersFound.Add(int(n)) {
+			return fmt.Errorf("number %d is repeated in row/column/subgrid at %d, %d", n, x, y)
 		}
-
-		columnValid := true
-		b.board.ForEachInColumn(x, func(x2, y2 int) {
-			if x2 == x && y2 == y {
-				return
-			}
-			if b.board.Get(x2, y2) == number {
-				columnValid = false
-			}
-		})
-		if !columnValid {
-			return fmt.Errorf("column invalid")
-		}
-
-		subgridValid := true
-		b.board.ForEachInSubgrid(x, y, func(x2, y2 int) {
-			if x2 == x && y2 == y {
-				return
-			}
-			if b.board.Get(x2, y2) == number {
-				subgridValid = false
-			}
-		})
-		if !subgridValid {
-			return fmt.Errorf("subgrid invalid")
-		}
-
 		return nil
-	})
+	}
+	err := b.board.Validate(validateFunc, numbersFound.Clear)
 	return err == nil
 }

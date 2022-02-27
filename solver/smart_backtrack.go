@@ -29,18 +29,18 @@ func NewSmartBarcktrack() Solver {
 }
 
 func (s *smartBacktrack) Reset(board *board.Board) {
+	if err := s.validateInitialBoard(board); err != nil {
+		s.solvable = false
+		return
+	}
 	s.solvable = true
 	s.board = board.Copy()
 	s.fieldsToFill = fieldsToFillHeap{}
-	board.ForEachUntilError(func(x, y int) error {
-		if board.Get(x, y) == 0 {
-			availableNumbers, err := s.findPossibleNumbers(x, y)
-			if err != nil {
-				s.solvable = false
-			}
+	board.ForEach(func(x, y int, n uint16) {
+		if n == 0 {
+			availableNumbers := s.findPossibleNumbers(x, y)
 			s.fieldsToFill = append(s.fieldsToFill, fieldToFill{x: x, y: y, possibleValues: availableNumbers})
 		}
-		return nil
 	})
 	heap.Init(&s.fieldsToFill)
 	s.leftoverChoices = make([]fieldChoice, 0)
@@ -129,10 +129,7 @@ func (s *smartBacktrack) backtrack() bool {
 		// check if current f is the field that we want to backtrack to (use leftoverChoice for that)
 		if f.x == leftoverChoice.x && f.y == leftoverChoice.y {
 			// sanity check
-			possibleNumbers, err := s.findPossibleNumbers(f.x, f.y)
-			if err != nil {
-				panic(fmt.Sprintf("backtrack possible numbers assertion failed: %s", err))
-			}
+			possibleNumbers := s.findPossibleNumbers(f.x, f.y)
 			if !possibleNumbers.Get(int(leftoverChoice.n)) {
 				panic(fmt.Sprintf("backtrack possible numbers assertion failed: %d is not in possibleNumbers", leftoverChoice.n))
 			}
@@ -159,25 +156,36 @@ func (s *smartBacktrack) backtrack() bool {
 func (s *smartBacktrack) restoreFieldsToFill(revertedChoices []fieldChoice) {
 	for i := range s.fieldsToFill {
 		f := &s.fieldsToFill[i]
-		possibleValues, err := s.findPossibleNumbers(f.x, f.y)
-		if err != nil {
-			panic(fmt.Sprintf("restoreFieldsToFill assertion failed: %s", err))
-		}
+		possibleValues := s.findPossibleNumbers(f.x, f.y)
 		s.fieldsToFill[i].possibleValues = possibleValues
 	}
 	for _, f := range revertedChoices {
-		possibleValues, _ := s.findPossibleNumbers(f.x, f.y)
+		possibleValues := s.findPossibleNumbers(f.x, f.y)
 		s.fieldsToFill = append(s.fieldsToFill, fieldToFill{f.x, f.y, possibleValues})
 	}
 	heap.Init(&s.fieldsToFill)
 }
 
-func (s *smartBacktrack) findPossibleNumbers(x, y int) (*set.Set, error) {
+func (s *smartBacktrack) findPossibleNumbers(x, y int) *set.Set {
 	allForbiddenNumbers := set.New(s.board.Size())
 	s.board.ForEachNeighbour(x, y, func(x, y int) {
 		if n := s.board.Get(x, y); n != 0 {
 			allForbiddenNumbers.Add(int(n))
 		}
 	})
-	return allForbiddenNumbers.Complement(), nil
+	return allForbiddenNumbers.Complement()
+}
+
+func (s *smartBacktrack) validateInitialBoard(b *board.Board) error {
+	numbersFound := set.New(b.Size())
+	validateFunc := func(x, y int, n uint16) error {
+		if n == 0 {
+			return nil // initial validation accepts unfilled fields
+		}
+		if !numbersFound.Add(int(n)) {
+			return fmt.Errorf("number %d is repeated in row/column/subgrid at %d, %d", n, x, y)
+		}
+		return nil
+	}
+	return b.Validate(validateFunc, numbersFound.Clear)
 }

@@ -182,35 +182,10 @@ func (b *Board) Equal(b2 *Board) bool {
 	return true
 }
 
-func (b *Board) ForEachInRow(y int, operation func(x, y int)) {
-	for x := 0; x < b.gridSize; x++ {
-		operation(x, y)
-	}
-}
-
-func (b *Board) ForEachInColumn(x int, operation func(x, y int)) {
-	for y := 0; y < b.gridSize; y++ {
-		operation(x, y)
-	}
-}
-
-func (b *Board) ForEachUntilError(operation func(x, y int) error) error {
+func (b *Board) ForEach(operation func(x, y int, n uint16)) {
 	for y := 0; y < b.gridSize; y++ {
 		for x := 0; x < b.gridSize; x++ {
-			if err := operation(x, y); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (b *Board) ForEachInSubgrid(x, y int, operation func(x, y int)) {
-	gridBeginX := x - x%b.subgridWidth
-	gridBeginY := y - y%b.subgridHeight
-	for dy := 0; dy < b.subgridHeight; dy++ {
-		for dx := 0; dx < b.subgridWidth; dx++ {
-			operation(gridBeginX+dx, gridBeginY+dy)
+			operation(x, y, b.Get(x, y))
 		}
 	}
 }
@@ -220,16 +195,19 @@ func (b *Board) ForEachNeighbour(x0, y0 int, operation func(x, y int)) {
 	gridBeginY := y0 - y0%b.subgridHeight
 	gridEndX := gridBeginX + b.subgridWidth
 	gridEndY := gridBeginY + b.subgridHeight
+
 	// vertical line above subgrid
 	for y := 0; y < gridBeginY; y++ {
 		operation(x0, y)
 	}
+
 	// subgrid above point
 	for y := gridBeginY; y < y0; y++ {
 		for x := gridBeginX; x < gridEndX; x++ {
 			operation(x, y)
 		}
 	}
+
 	// point's row, including subgrid, excluding point itself
 	for x := 0; x < x0; x++ {
 		operation(x, y0)
@@ -237,16 +215,56 @@ func (b *Board) ForEachNeighbour(x0, y0 int, operation func(x, y int)) {
 	for x := x0 + 1; x < b.gridSize; x++ {
 		operation(x, y0)
 	}
+
 	// subgrid below point
 	for y := y0 + 1; y < gridEndY; y++ {
 		for x := gridBeginX; x < gridEndX; x++ {
 			operation(x, y)
 		}
 	}
+
 	// vertical line below subgrid
 	for y := gridEndY; y < b.gridSize; y++ {
 		operation(x0, y)
 	}
+}
+
+func (b *Board) Validate(validate func(x, y int, n uint16) error, nextFieldGroup func()) error {
+	// for each row
+	for y := 0; y < b.gridSize; y++ {
+		for x := 0; x < b.gridSize; x++ {
+			if err := validate(x, y, b.Get(x, y)); err != nil {
+				return err
+			}
+		}
+		nextFieldGroup()
+	}
+
+	// for each column
+	for x := 0; x < b.gridSize; x++ {
+		for y := 0; y < b.gridSize; y++ {
+			if err := validate(x, y, b.Get(x, y)); err != nil {
+				return err
+			}
+		}
+		nextFieldGroup()
+	}
+
+	// for each subgrid
+	for y0 := 0; y0 < b.gridSize; y0 += b.subgridHeight {
+		for x0 := 0; x0 < b.gridSize; x0 += b.subgridWidth {
+			for y := y0; y < y0+b.subgridHeight; y++ {
+				for x := x0; x < x0+b.subgridWidth; x++ {
+					if err := validate(x, y, b.Get(x, y)); err != nil {
+						return err
+					}
+				}
+			}
+			nextFieldGroup()
+		}
+	}
+
+	return nil
 }
 
 func (b *Board) HaveCommonSubgrid(x1, y1, x2, y2 int) bool {

@@ -51,18 +51,6 @@ func TestBoardGetAndSet(t *testing.T) {
 	})
 }
 
-func TestBoardForEachInSubgrid(t *testing.T) {
-	board, err := board.New(3, 2)
-	require.NoError(t, err)
-	board.ForEachInSubgrid(1, 3, func(x, y int) {
-		board.Set(x, y, 1)
-	})
-	board.ForEachInSubgrid(3, 0, func(x, y int) {
-		board.Set(x, y, 2)
-	})
-	assert.Equal(t, board3x2partiallyFilled, board.String())
-}
-
 func TestBoardForEachNeighbour(t *testing.T) {
 	board, err := board.New(3, 2)
 	require.NoError(t, err)
@@ -152,18 +140,6 @@ const board3x2zeros = `+-------+-------+
 +-------+-------+
 | 0 0 0 | 0 0 0 |
 | 0 0 0 | 0 0 0 |
-+-------+-------+
-| 0 0 0 | 0 0 0 |
-| 0 0 0 | 0 0 0 |
-+-------+-------+
-`
-
-const board3x2partiallyFilled = `+-------+-------+
-| 0 0 0 | 2 2 2 |
-| 0 0 0 | 2 2 2 |
-+-------+-------+
-| 1 1 1 | 0 0 0 |
-| 1 1 1 | 0 0 0 |
 +-------+-------+
 | 0 0 0 | 0 0 0 |
 | 0 0 0 | 0 0 0 |
