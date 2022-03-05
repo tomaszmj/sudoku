@@ -8,18 +8,48 @@ import (
 	"github.com/tomaszmj/sudoku/set"
 )
 
+// smartBacktrack solver searches space of possible sudoku solutions in a "smart" way.
+// When selecting where to fill in the next number, it uses heuristics -
+// in each iteration we pick field, for which count of possible numbers
+// (numbers which are not in the same row/column/subgrid) is smallest.
+// Thanks to that, we limit number of solution space "subtrees" to be explored.
+// Moreover, backtracking is implemented with stack without recursion. Thanks
+// to that, in case of grids with multiple solutiions, we can generate them one-by-one on demand.
+//
+// The algothim works on the following data structures:
+// fieldsToFill fieldsToFillHeap - priority queue to pick field to be filled in in each iteration,
+// leftoverChoices []fieldChoice - stack of choices that can be made when bactracking,
+// choicesMade []fieldChoice - stack of choices that were made, and will have to be reversed when backtracking.
+//
+// Each fieldToFill (element of fieldsToFillHeap) contains information about
+// its possible values (i.e. numbers that are not in the same row / column / subgrid).
+// Initially, fieldsToFill are filled in with all empty fileds from the board.
+// In each iteration of filling in sudoku, we pick field from fieldsToFill,
+// using heuristic - number that has smallest number of possible values.
+// Among possible numbers we select one and put in on the board (other choices are pushed
+// to leftoverChoices stack). When number on a field is set, we remove the field from fieldsToFill,
+// push inforamtion about decision made to choicesMade stack, and update remaining fieldsToFill
+// (after putting new number on the board there will be less possible choices for other fields to fill
+// in the same row / column / subgrid).
+//
+// If there are no possible values to choose from in one of the fieldsToFill, it means that given
+// solution space "subtree" cannot be solved - we try to do backtracking. In this case,
+// we revert all choices made (from choicesMade stack) until fields choice that was left on
+// leftoverFields stack (which opens other "subtree" that we did not explore yet). Reverting
+// choices puts fields back in fieldsToFill queue and updates possible values of other fieldsToFill
+// (except for the last reverted choice - the one for which we have some leftover choice to be selected -
+// for this field only numbers that were not picked yet are still available).
+//
+// Solving sudoku (NextSolution) ends if we fill in whole board (fieldsToFill queue is empty) or if we
+// encounter field with no choices and there are no backtracking options left (in this case there is no solution).
+// After finding solution we copy board state and try to perform backtracking, so that NextSolution can be
+// called again to find more solutions (if they exist). Thanks to that, we can force searching whole
+// possible solutions "tree".
+
 type smartBacktrack struct {
-	board        *board.Board
-	fieldsToFill fieldsToFillHeap
-	solvable     bool
-	// Let's say we take from fieldsToFill
-	// field (1,1) with possible numbers {1,2}.
-	// We put 1 on board and push remaining options to the stack, i.e. (1,1) {2}.
-	// If there are no options left, we still push field to the stack to be able
-	// to trace back our choices. For example if the next field to fill
-	// was (2,3) with {3}, then we put (2,3) {} to the stack.
-	// NextSolution ends with success if fieldsToFill if empty,
-	// with no solution if choice stack is empty.
+	board           *board.Board
+	fieldsToFill    fieldsToFillHeap
+	solvable        bool
 	leftoverChoices []fieldChoice
 	choicesMade     []fieldChoice
 }
