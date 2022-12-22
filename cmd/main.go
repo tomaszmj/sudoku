@@ -34,5 +34,9 @@ func main() {
 		fmt.Println("no solution")
 	} else {
 		fmt.Printf("solution:\n%s\n", solution)
+		solution2 := solver.NextSolution()
+		if solution2 != nil {
+			fmt.Println("there are more solutions to this board (only 1 has been shown)")
+		}
 	}
 }
